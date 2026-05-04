@@ -9,6 +9,6 @@ TWEAK_NAME = ces
 ces_FILES = Tweak.xm
 ces_CFLAGS = -fobjc-arc
 
-include $(THEOS_MAKE_PATH)/[tweak.mk](tweak.mk)
+include $(THEOS_MAKE_PATH)/tweak.mk
 
 
