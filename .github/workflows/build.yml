@@ -5,7 +5,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -15,20 +15,24 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential git perl libssl-dev clang llvm
 
-      - name: Setup Theos (纯官方、零外部下载)
+      - name: Setup Theos + Fix Toolchain
         run: |
-          # 用官方镜像完整克隆Theos（含子模块）
+          # 1. 克隆Theos
           git clone --depth 1 --recursive https://github.com/theos/theos.git $HOME/theos
           echo "THEOS=$HOME/theos" >> $GITHUB_ENV
           echo "THEOS_MAKE_PATH=$HOME/theos/makefiles" >> $GITHUB_ENV
 
-          # 创建SDK占位，跳过所有下载
+          # 2. 关键！强制让Theos使用系统自带的clang，绕开缺失的工具链
+          echo "export CC=clang" >> $GITHUB_ENV
+          echo "export CXX=clang++" >> $GITHUB_ENV
+          echo "export TARGET_CC=clang" >> $GITHUB_ENV
+          echo "export TARGET_CXX=clang++" >> $GITHUB_ENV
+
+          # 3. 绕过SDK检测
           mkdir -p $HOME/theos/sdks
           touch $HOME/theos/sdks/iPhoneOS15.0.sdk
 
-          # 关键：强制使用系统clang作为编译器，绕开Theos自带工具链缺失问题
-          echo "export CC=clang" >> $GITHUB_ENV
-          echo "export CXX=clang++" >> $GITHUB_ENV
-
       - name: Build package
-        run: make package
+        run: |
+          # 强制使用系统编译器，忽略工具链路径
+          make package THEOS_DEVICE_IP= THEOS_DEVICE_PORT=
