@@ -1,1 +1,8 @@
-Package: com.yourname.helperpatch<br/>Name: HelperPatch<br/>Version: 1.0<br/>Architecture: iphoneos-arm<br/>Description: Your tweak description here<br/>Maintainer: Your Name <your@email.com><br/>Author: Your Name <your@email.com><br/>Section: Tweaks<br/>Depends: mobilesubstrate
+Package: com.yourname.ces
+Name: ces
+Version: 1.0
+Architecture: iphoneos-arm64, iphoneos-arm64e
+Description: A simple tweak for WeChat
+Maintainer: Your Name
+Author: Your Name
+Section: Tweaks
