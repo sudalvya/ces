@@ -15,15 +15,15 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential git wget
 
-      - name: Setup full Theos (with toolchain)
+      - name: Setup full Theos (with toolchain, no SDK download)
         run: |
-          # 下载带工具链的完整 Theos 包，跳过 git clone
+          # 下载带工具链的完整 Theos 包
           wget -O theos.tar.gz https://github.com/opa334/theos/archive/refs/heads/master.tar.gz
           mkdir -p $HOME/theos
           tar -xzf theos.tar.gz --strip-components=1 -C $HOME/theos
           echo "THEOS=$HOME/theos" >> $GITHUB_ENV
           echo "THEOS_MAKE_PATH=$HOME/theos/makefiles" >> $GITHUB_ENV
-          # 创建 SDK 占位文件，骗过 Theos 检测
+          # 只创建SDK占位文件，不下载任何东西
           mkdir -p $HOME/theos/sdks
           touch $HOME/theos/sdks/iPhoneOS15.0.sdk
 
