@@ -1,100 +1,43 @@
 name: Build
-
 on:
-  push:
   workflow_dispatch:
+  push:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Full Theos Env + SDK
-        shell: bash
-        env:
-          SKIP_SDK: ${{ secrets.SKIP_SDK || '' }}
+      - name: Full Theos Env + Multi-Source SDK
         run: |
-          set -euo pipefail
-
-          # 可用性检查：如果想跳过 SDK 下载，设置仓库 secret SKIP_SDK=true 或将这里改为导出环境变量
-          if [ "${SKIP_SDK:-}" = "true" ]; then
-            echo "SKIP_SDK is true — skipping SDK download step."
-            exit 0
-          fi
-
-          sudo apt-get update -y
-          sudo apt-get install -y git build-essential perl curl tar xz-utils ca-certificates
-
-          git clone --recursive https://github.com/theos/theos.git "$HOME/theos"
-          echo "THEOS=$HOME/theos" >> $GITHUB_ENV
-          mkdir -p "$HOME/theos/sdks"
-          cd "$HOME/theos/sdks"
-
-          # 默认 SDK URL（如果你有自己的可用 URL，请直接改这里）
-          DEFAULT_SDK_URL="https://github.com/xybp888/iOS-SDKs/releases/download/1.0/iPhoneOS15.0.sdk.tar.xz"
-          SDK_URL="${SDK_URL:-$DEFAULT_SDK_URL}"
-
-          echo "Using SDK_URL: $SDK_URL"
-          OUTFILE="iPhoneOS15.0.sdk.tar.xz"
-
-          # 清理残留文件
-          rm -f "$OUTFILE"
-
-          # curl 下载并在 HTTP 错误时失败；带简单重试
-          max_retries=3
-          attempt=1
-          while [ $attempt -le $max_retries ]; do
-            echo "Download attempt $attempt/$max_retries..."
-            if curl -fSL --retry 2 --retry-delay 5 -o "$OUTFILE" "$SDK_URL"; then
-              echo "Download succeeded."
-              break
+          sudo apt update -y
+          sudo apt install git build-essential perl wget tar -y
+          git clone --recursive https://github.com/theos/theos.git $HOME/theos
+          echo THEOS=$HOME/theos >> $GITHUB_ENV
+          mkdir -p $HOME/theos/sdks
+          cd $HOME/theos/sdks
+          
+          # 尝试第一个源
+          if ! wget -q --spider https://github.com/luis200412/iOS-SDKs/releases/download/15.0/iPhoneOS15.0.sdk.tar.xz; then
+            # 第一个失败，尝试第二个源
+            if ! wget -q --spider https://github.com/xybp888/iOS-SDKs/releases/download/1.0/iPhoneOS15.0.sdk.tar.xz; then
+              # 第二个失败，尝试第三个源
+              wget -O iPhoneOS15.0.sdk.tar.xz https://github.com/RetOv/iOS-SDKs/releases/download/15.0/iPhoneOS15.0.sdk.tar.xz
             else
-              echo "Download attempt $attempt failed."
-              rm -f "$OUTFILE"
-              attempt=$((attempt+1))
-              sleep 3
+              wget -O iPhoneOS15.0.sdk.tar.xz https://github.com/xybp888/iOS-SDKs/releases/download/1.0/iPhoneOS15.0.sdk.tar.xz
             fi
-          done
-
-          if [ ! -f "$OUTFILE" ]; then
-            echo "ERROR: Failed to download SDK from $SDK_URL after $max_retries attempts."
-            echo "Fix options:"
-            echo "  - Upload SDK to a stable host (GitHub Release, S3, etc.) and set SDK_URL to that direct link."
-            echo "  - Add SDK into repo (not recommended for large files) and modify workflow to use local path."
-            echo "  - Set secret SKIP_SDK=true to skip SDK step for debugging."
-            exit 1
+          else
+            wget -O iPhoneOS15.0.sdk.tar.xz https://github.com/luis200412/iOS-SDKs/releases/download/15.0/iPhoneOS15.0.sdk.tar.xz
           fi
-
-          # 校验 xz 格式
-          if ! xz --test "$OUTFILE" >/dev/null 2>&1; then
-            echo "ERROR: Downloaded file is not a valid xz archive. Removing file and aborting."
-            rm -f "$OUTFILE"
-            exit 1
-          fi
-
-          # 校验 tar 内容
-          if ! tar -tf "$OUTFILE" >/dev/null 2>&1; then
-            echo "ERROR: Archive exists but tar cannot list contents (not a valid tar.xz)."
-            rm -f "$OUTFILE"
-            exit 1
-          fi
-
-          tar -xf "$OUTFILE"
-          rm -f "$OUTFILE"
-          echo "SDK extracted to $HOME/theos/sdks"
+          
+          tar -xf iPhoneOS15.0.sdk.tar.xz
+          rm iPhoneOS15.0.sdk.tar.xz
 
       - name: Compile
-        run: |
-          set -euo pipefail
-          make clean || true
-          make package
+        run: make clean && make package
 
-      - name: Upload .deb
+      - name: Get Deb
         uses: actions/upload-artifact@v4
         with:
           path: packages/*.deb
