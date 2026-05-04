@@ -1,92 +1,24 @@
-name: Build
+- name: Full Theos Env + SDK
+  shell: bash
+  run: |
+    set -euo pipefail
+    sudo apt update -y
+    sudo apt install -y git build-essential perl curl tar xz-utils ca-certificates
 
-on:
-  workflow_dispatch:
-    inputs:
-      sdk_url:
-        description: '可选：iPhoneOS15.0.sdk.tar.xz 的下载 URL（优先��用）。留空则使用默认 URL。'
-        required: false
-        default: ''
-  push:
+    git clone --recursive https://github.com/theos/theos.git "$HOME/theos"
+    echo THEOS=$HOME/theos >> $GITHUB_ENV
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+    mkdir -p "$HOME/theos/sdks"
+    cd "$HOME/theos/sdks"
 
-      - name: Full Theos Env + SDK
-        shell: bash
-        run: |
-          set -euo pipefail
-          sudo apt update -y
-          sudo apt install -y git build-essential perl curl tar xz-utils ca-certificates
+    # Local fallback path inside repository (optional)
+    LOCAL_PATH="${GITHUB_WORKSPACE:-$(pwd)}/.github/sdks/iPhoneOS15.0.sdk.tar.xz"
 
-          # clone theos
-          git clone --recursive https://github.com/theos/theos.git "$HOME/theos"
-          echo THEOS=$HOME/theos >> $GITHUB_ENV
-
-          mkdir -p "$HOME/theos/sdks"
-          cd "$HOME/theos/sdks"
-
-          # Determine SDK URL: prefer workflow_dispatch input if provided
-          SDK_URL="${{ github.event.inputs.sdk_url }}"
-          if [ -z "$SDK_URL" ]; then
-            SDK_URL="https://github.com/xybp888/iOS-SDKs/releases/download/1.0/iPhoneOS15.0.sdk.tar.xz"
-          fi
-          echo "Using SDK_URL: $SDK_URL"
-
-          OUTFILE="iPhoneOS15.0.sdk.tar.xz"
-          # Clean any previous partial file
-          rm -f "$OUTFILE"
-
-          # Download with curl (fail on HTTP errors), with retries
-          retry=0
-          max_retries=3
-          until [ $retry -ge $max_retries ]
-          do
-            if curl -fSL --retry 2 --retry-delay 5 -o "$OUTFILE" "$SDK_URL"; then
-              echo "Download succeeded."
-              break
-            else
-              echo "Download attempt $((retry+1))/$max_retries failed."
-              rm -f "$OUTFILE"
-              retry=$((retry+1))
-              sleep 5
-            fi
-          done
-
-          if [ ! -f "$OUTFILE" ]; then
-            echo "ERROR: Failed to download SDK from $SDK_URL after $max_retries attempts."
-            echo "Fix options:"
-            echo "  1) Provide a working SDK URL when running the workflow (input 'sdk_url')."
-            echo "  2) Upload the SDK to a stable host (your GitHub Release, S3, etc.) and use that URL."
-            echo "  3) Add the SDK tar.xz into the repository (not recommended for large files)."
-            exit 1
-          fi
-
-          # Verify downloaded file is a valid xz (and tar.xz)
-          if ! xz --test "$OUTFILE" >/dev/null 2>&1; then
-            echo "ERROR: Downloaded file is not a valid xz archive."
-            rm -f "$OUTFILE"
-            exit 1
-          fi
-
-          # Optional: test tar list (tar may error if it's not a tar stream inside xz)
-          if ! tar -tf "$OUTFILE" >/dev/null 2>&1; then
-            echo "ERROR: Archive exists but tar cannot list its contents (not a valid tar.xz)."
-            rm -f "$OUTFILE"
-            exit 1
-          fi
-
-          # Extract
-          tar -xf "$OUTFILE"
-          rm -f "$OUTFILE"
-
-      - name: Compile
-        run: make clean && make package
-
-      - name: Get Deb
-        uses: actions/upload-artifact@v4
-        with:
-          path: packages/*.deb
+    # Determine SDK_URL: prefer workflow_dispatch input if provided
+    SDK_URL="${{ github.event.inputs.sdk_url }}"
+    if [ -z "$SDK_URL" ]; then
+      SDK_URL="https://github.com/xybp888/iOS-SDKs/releases/download/1.0/iPhoneOS15.0.sdk.tar.xz"
+    fi
+    echo "Configured SDK_URL: $SDK_URL"
+](#)
+
