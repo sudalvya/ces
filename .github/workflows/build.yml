@@ -36,3 +36,4 @@ jobs:
         run: |
           # 强制使用系统编译器，忽略工具链路径
           make package THEOS_DEVICE_IP= THEOS_DEVICE_PORT=
+
