@@ -1,48 +1,26 @@
-name: Build Tweak
+name: Build
 on:
-  push:
-    branches: [ main ]
   workflow_dispatch:
+  push:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Install dependencies
+      - name: Full Theos Env Fast
         run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential git perl libssl-dev clang llvm wget tar
+          sudo apt update -y
+          sudo apt install git build-essential perl -y
+          git clone --recursive https://github.com/theos/theos.git $HOME/theos
+          echo THEOS=$HOME/theos >> $GITHUB_ENV
+          mkdir -p $HOME/theos/sdks
 
-      - name: Setup Theos + SDK + Toolchain
-        run: |
-          export THEOS=$HOME/theos
-          # 1. 克隆完整Theos
-          git clone --depth 1 --recursive https://github.com/theos/theos.git $THEOS
-          echo "THEOS=$THEOS" >> $GITHUB_ENV
-          echo "THEOS_MAKE_PATH=$THEOS/makefiles" >> $GITHUB_ENV
+      - name: Compile
+        run: make clean && make package
 
-          # 2. 下载并安装iOS SDK
-          mkdir -p $THEOS/sdks
-          cd $THEOS/sdks
-          wget -O iPhoneOS15.0.sdk.tar.xz https://github.com/xybp888/iOS-SDKs/releases/download/1.0/iPhoneOS15.0.sdk.tar.xz
-          tar -xf iPhoneOS15.0.sdk.tar.xz
-          rm iPhoneOS15.0.sdk.tar.xz
-
-          # 3. 下载并安装完整Linux工具链
-          mkdir -p $THEOS/toolchain/linux/iphone
-          cd $THEOS/toolchain/linux/iphone
-          wget -O toolchain.tar.xz https://github.com/xybp888/ios-toolchain/releases/download/1.0/ios-toolchain-linux-x86_64.tar.xz
-          tar -xf toolchain.tar.xz --strip-components=1
-          rm toolchain.tar.xz
-
-      - name: Build package
-        run: make package
-
-      - name: Upload artifacts
+      - name: Get Deb
         uses: actions/upload-artifact@v4
         with:
-          name: deb-packages
-          path: ./packages/*.deb
+          path: packages/*.deb
