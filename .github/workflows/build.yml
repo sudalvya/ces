@@ -13,17 +13,15 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential git wget
+          sudo apt-get install -y build-essential git wget perl
 
-      - name: Setup full Theos (with toolchain, no SDK download)
+      - name: Setup Theos (full with dm.pl)
         run: |
-          # 下载带工具链的完整 Theos 包
-          wget -O theos.tar.gz https://github.com/opa334/theos/archive/refs/heads/master.tar.gz
-          mkdir -p $HOME/theos
-          tar -xzf theos.tar.gz --strip-components=1 -C $HOME/theos
+          # 用官方仓库克隆，确保dm.pl完整
+          git clone --depth 1 --recursive https://github.com/theos/theos.git $HOME/theos
           echo "THEOS=$HOME/theos" >> $GITHUB_ENV
           echo "THEOS_MAKE_PATH=$HOME/theos/makefiles" >> $GITHUB_ENV
-          # 只创建SDK占位文件，不下载任何东西
+          # 创建SDK占位文件
           mkdir -p $HOME/theos/sdks
           touch $HOME/theos/sdks/iPhoneOS15.0.sdk
 
