@@ -1,1 +1,8 @@
-%hook Libashelper<br/>- (NSString *)getOfficialAccountID {<br/>    return %orig();<br/>}<br/><br/>- (NSString *)getOfficialAccountName {<br/>    NSString *originalName = %orig();<br/>    NSString *lowercaseName = originalName.lowercaseString;<br/>    if ([lowercaseName containsString:@"misaka"] || <br/>        [lowercaseName containsString:@"zzios.cn"]) {<br/>        return @"";<br/>    }<br/>    return originalName;<br/>}<br/>%end
+%hook Libashelper
+    - (NSString *)getOfficialAccountID {
+        return %orig();
+    }
+    - (NSString *)getOfficialAccountName {
+        return %orig();
+    }
+    %end
