@@ -1,0 +1,1 @@
+Package: com.yourname.helperpatch<br/>Name: HelperPatch<br/>Version: 1.0<br/>Architecture: iphoneos-arm<br/>Description: Your tweak description here<br/>Maintainer: Your Name <your@email.com><br/>Author: Your Name <your@email.com><br/>Section: Tweaks<br/>Depends: mobilesubstrate
