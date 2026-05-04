@@ -13,15 +13,21 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential git wget perl
+          sudo apt-get install -y build-essential git perl libssl-dev wget curl
 
-      - name: Setup Theos (full with dm.pl)
+      - name: Setup Theos + Toolchain (一次性配齐)
         run: |
-          # 用官方仓库克隆，确保dm.pl完整
+          # 1. 安装 Theos 主程序
           git clone --depth 1 --recursive https://github.com/theos/theos.git $HOME/theos
           echo "THEOS=$HOME/theos" >> $GITHUB_ENV
           echo "THEOS_MAKE_PATH=$HOME/theos/makefiles" >> $GITHUB_ENV
-          # 创建SDK占位文件
+
+          # 2. 下载 Linux 版 iOS 交叉编译工具链（解决 clang 缺失问题）
+          wget -O toolchain.tar.xz https://github.com/xybp888/ios-toolchain/releases/download/1.0/ios-toolchain-linux-x86_64.tar.xz
+          mkdir -p $HOME/theos/toolchain/linux/iphone
+          tar -xf toolchain.tar.xz -C $HOME/theos/toolchain/linux/iphone --strip-components=1
+
+          # 3. 创建 SDK 占位文件（绕过 SDK 下载）
           mkdir -p $HOME/theos/sdks
           touch $HOME/theos/sdks/iPhoneOS15.0.sdk
 
