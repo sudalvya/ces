@@ -2,10 +2,11 @@ name: Build Tweak
 on:
   push:
     branches: [ main ]
+  workflow_dispatch:  # 允许手动触发！关键配置
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -13,27 +14,22 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential git perl libssl-dev clang llvm
+          sudo apt-get install -y build-essential git perl libssl-dev curl
 
-      - name: Setup Theos + Fix Toolchain
+      - name: Setup Theos (official method)
         run: |
-          # 1. 克隆Theos
-          git clone --depth 1 --recursive https://github.com/theos/theos.git $HOME/theos
-          echo "THEOS=$HOME/theos" >> $GITHUB_ENV
-          echo "THEOS_MAKE_PATH=$HOME/theos/makefiles" >> $GITHUB_ENV
-
-          # 2. 关键！强制让Theos使用系统自带的clang，绕开缺失的工具链
-          echo "export CC=clang" >> $GITHUB_ENV
-          echo "export CXX=clang++" >> $GITHUB_ENV
-          echo "export TARGET_CC=clang" >> $GITHUB_ENV
-          echo "export TARGET_CXX=clang++" >> $GITHUB_ENV
-
-          # 3. 绕过SDK检测
-          mkdir -p $HOME/theos/sdks
-          touch $HOME/theos/sdks/iPhoneOS15.0.sdk
+          export THEOS=$HOME/theos
+          git clone --recursive https://github.com/theos/theos.git $THEOS
+          echo "THEOS=$THEOS" >> $GITHUB_ENV
+          echo "THEOS_MAKE_PATH=$THEOS/makefiles" >> $GITHUB_ENV
+          cd $THEOS
+          ./bin/theos-install-sdk.sh 15.0
 
       - name: Build package
-        run: |
-          # 强制使用系统编译器，忽略工具链路径
-          make package THEOS_DEVICE_IP= THEOS_DEVICE_PORT=
+        run: make package
 
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: deb-packages
+          path: ./packages/*.deb
