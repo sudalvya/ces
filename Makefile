@@ -1,13 +1,14 @@
 ARCHS = arm64 arm64e
-TARGET = iphone:clang:15\.0:14\.0
-INSTALL\_TARGET\_PROCESSES = WeChat
+TARGET = iphone:clang:15.0:14.0
+INSTALL_TARGET_PROCESSES = WeChat
 
-nclude $(THEOS)/makefiles/common.mk
+include $(THEOS\)/makefiles/common.mk](common.mk)
 
 TWEAK\_NAME = ces
 
-ces\_FILES = Tweak\.xm
-ces\_CFLAGS = \-fobjc\-arc
+ces_FILES = Tweak.xm
+ces\_CFLAGS = -fobjc-arc
 
-include $(THEOS_MAKE_PATH)/tweak.mk
+include $(THEOS_MAKE_PATH)/[tweak.mk](tweak.mk)
+
 
