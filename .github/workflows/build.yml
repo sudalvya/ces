@@ -13,16 +13,16 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential git curl libssl-dev
+          sudo apt-get install -y build-essential git curl libssl-dev wget
 
-      - name: Setup Theos
+      - name: Setup Theos & SDK
         run: |
-          # 快速安装 Theos（depth 1 减少下载量）
+          # 安装Theos
           git clone --depth 1 --recursive https://github.com/theos/theos.git $HOME/theos
           echo "THEOS=$HOME/theos" >> $GITHUB_ENV
           echo "THEOS_MAKE_PATH=$HOME/theos/makefiles" >> $GITHUB_ENV
-          # 下载 iOS 15.0 SDK（Theos 编译必需）
-          curl -LO https://github.com/xybp888/iOS-SDKs/releases/download/1.0/iPhoneOS15.0.sdk.tar.xz
+          # 换用wget下载SDK，比curl更稳定
+          wget -O iPhoneOS15.0.sdk.tar.xz https://github.com/xybp888/iOS-SDKs/releases/download/1.0/iPhoneOS15.0.sdk.tar.xz
           mkdir -p $HOME/theos/sdks
           tar -xf iPhoneOS15.0.sdk.tar.xz -C $HOME/theos/sdks/
 
